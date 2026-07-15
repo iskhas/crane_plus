@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <limits>
 #include <memory>
 #include <string>
@@ -20,7 +19,6 @@
 
 #include "crane_plus_control/crane_plus_hardware.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-
 
 namespace crane_plus_control
 {
@@ -32,14 +30,14 @@ CranePlusHardware::~CranePlusHardware()
 }
 
 CallbackReturn CranePlusHardware::on_init(
-  const hardware_interface::HardwareInfo & info)
+  const hardware_interface::HardwareComponentInterfaceParams & params)
 {
-  if (hardware_interface::SystemInterface::on_init(info) != CallbackReturn::SUCCESS) {
+  if (hardware_interface::SystemInterface::on_init(params) != CallbackReturn::SUCCESS) {
     return CallbackReturn::ERROR;
   }
 
-  // Get parameters from URDF
-  // Initialize member variables
+    // Get parameters from URDF
+    // Initialize member variables
   std::string port_name = info_.hardware_parameters["port_name"];
   int baudrate = std::stoi(info_.hardware_parameters["baudrate"]);
   timeout_seconds_ = std::stod(info_.hardware_parameters["timeout_seconds"]);
@@ -54,9 +52,9 @@ CallbackReturn CranePlusHardware::on_init(
       dxl_id_list.push_back(std::stoi(joint.parameters["dxl_id"]));
     } else {
       RCLCPP_ERROR(
-        rclcpp::get_logger("CranePlusHardware"),
-        "Joint '%s' does not have 'dxl_id' parameter.",
-        joint.name.c_str());
+            rclcpp::get_logger("CranePlusHardware"),
+            "Joint '%s' does not have 'dxl_id' parameter.",
+            joint.name.c_str());
       return CallbackReturn::ERROR;
     }
   }
@@ -68,41 +66,40 @@ CallbackReturn CranePlusHardware::on_init(
   hw_voltage_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   hw_temperature_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
-  // Open a crane_plus_driver
+    // Open a crane_plus_driver
   driver_ = std::make_shared<CranePlusDriver>(port_name, baudrate, dxl_id_list);
   if (!driver_->open_port()) {
     RCLCPP_ERROR(
-      rclcpp::get_logger("CranePlusHardware"), driver_->get_last_error_log().c_str());
+          rclcpp::get_logger("CranePlusHardware"), driver_->get_last_error_log().c_str());
     return CallbackReturn::ERROR;
   }
   if (!driver_->torque_enable(false)) {
     RCLCPP_ERROR(
-      rclcpp::get_logger("CranePlusHardware"), driver_->get_last_error_log().c_str());
+          rclcpp::get_logger("CranePlusHardware"), driver_->get_last_error_log().c_str());
     return CallbackReturn::ERROR;
   }
 
-  // Verify that the interface required by CranePlusHardware is set in the URDF.
+    // Verify that the interface required by CranePlusHardware is set in the URDF.
   for (const hardware_interface::ComponentInfo & joint : info_.joints) {
     if (joint.command_interfaces.size() != 1) {
       RCLCPP_ERROR(
-        rclcpp::get_logger("CranePlusHardware"),
-        "Joint '%s' has %lu command interfaces found. 1 expected.",
-        joint.name.c_str(), joint.command_interfaces.size());
+            rclcpp::get_logger("CranePlusHardware"),
+            "Joint '%s' has %lu command interfaces found. 1 expected.",
+            joint.name.c_str(), joint.command_interfaces.size());
       return CallbackReturn::ERROR;
     }
 
     if (joint.command_interfaces[0].name != hardware_interface::HW_IF_POSITION) {
       RCLCPP_ERROR(
-        rclcpp::get_logger("CranePlusHardware"),
-        "Joint '%s' have %s command interfaces found. '%s' expected.",
-        joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
-        hardware_interface::HW_IF_POSITION);
+            rclcpp::get_logger("CranePlusHardware"),
+            "Joint '%s' have %s command interfaces found. '%s' expected.",
+            joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
+            hardware_interface::HW_IF_POSITION);
       return CallbackReturn::ERROR;
     }
   }
 
   steady_clock_ = rclcpp::Clock(RCL_STEADY_TIME);
-
 
   return CallbackReturn::SUCCESS;
 }
@@ -113,32 +110,27 @@ CranePlusHardware::export_state_interfaces()
   std::vector<hardware_interface::StateInterface> state_interfaces;
   for (uint i = 0; i < info_.joints.size(); i++) {
     state_interfaces.emplace_back(
-      hardware_interface::StateInterface(
-        info_.joints[i].name, hardware_interface::HW_IF_POSITION,
-        &hw_position_states_[i])
-    );
+          hardware_interface::StateInterface(
+              info_.joints[i].name, hardware_interface::HW_IF_POSITION,
+              &hw_position_states_[i]));
 
     state_interfaces.emplace_back(
-      hardware_interface::StateInterface(
-        info_.joints[i].name, hardware_interface::HW_IF_VELOCITY,
-        &hw_velocity_states_[i])
-    );
+          hardware_interface::StateInterface(
+              info_.joints[i].name, hardware_interface::HW_IF_VELOCITY,
+              &hw_velocity_states_[i]));
 
     state_interfaces.emplace_back(
-      hardware_interface::StateInterface(
-        info_.joints[i].name, "load",
-        &hw_load_states_[i])
-    );
+          hardware_interface::StateInterface(
+              info_.joints[i].name, "load",
+              &hw_load_states_[i]));
     state_interfaces.emplace_back(
-      hardware_interface::StateInterface(
-        info_.joints[i].name, "voltage",
-        &hw_voltage_states_[i])
-    );
+          hardware_interface::StateInterface(
+              info_.joints[i].name, "voltage",
+              &hw_voltage_states_[i]));
     state_interfaces.emplace_back(
-      hardware_interface::StateInterface(
-        info_.joints[i].name, "temperature",
-        &hw_temperature_states_[i])
-    );
+          hardware_interface::StateInterface(
+              info_.joints[i].name, "temperature",
+              &hw_temperature_states_[i]));
   }
 
   return state_interfaces;
@@ -150,10 +142,9 @@ CranePlusHardware::export_command_interfaces()
   std::vector<hardware_interface::CommandInterface> command_interfaces;
   for (uint i = 0; i < info_.joints.size(); i++) {
     command_interfaces.emplace_back(
-      hardware_interface::CommandInterface(
-        info_.joints[i].name, hardware_interface::HW_IF_POSITION,
-        &hw_position_commands_[i])
-    );
+          hardware_interface::CommandInterface(
+              info_.joints[i].name, hardware_interface::HW_IF_POSITION,
+              &hw_position_commands_[i]));
   }
 
   return command_interfaces;
@@ -163,15 +154,15 @@ CallbackReturn CranePlusHardware::on_activate(const rclcpp_lifecycle::State & /*
 {
   if (!driver_->torque_enable(false)) {
     RCLCPP_ERROR(
-      rclcpp::get_logger("CranePlusHardware"),
-      driver_->get_last_error_log().c_str());
+          rclcpp::get_logger("CranePlusHardware"),
+          driver_->get_last_error_log().c_str());
     return CallbackReturn::ERROR;
   }
-  // Set current timestamp to disable the communication timeout.
+    // Set current timestamp to disable the communication timeout.
   prev_comm_timestamp_ = steady_clock_.now();
   timeout_has_printed_ = false;
 
-  // Set current joint positions to hw_position_commands.
+    // Set current joint positions to hw_position_commands.
   read(prev_comm_timestamp_, rclcpp::Duration::from_seconds(0));
   for (uint i = 0; i < hw_position_commands_.size(); i++) {
     hw_position_commands_[i] = hw_position_states_[i];
@@ -194,7 +185,7 @@ return_type CranePlusHardware::read(
   if (communication_timeout()) {
     if (!timeout_has_printed_) {
       RCLCPP_ERROR(
-        rclcpp::get_logger("CranePlusHardware"), "Communication timeout!");
+            rclcpp::get_logger("CranePlusHardware"), "Communication timeout!");
       timeout_has_printed_ = true;
     }
     return return_type::ERROR;
@@ -203,10 +194,10 @@ return_type CranePlusHardware::read(
   std::vector<double> joint_positions;
   if (!driver_->read_present_joint_positions(joint_positions)) {
     RCLCPP_ERROR(
-      rclcpp::get_logger("CranePlusHardware"),
-      driver_->get_last_error_log().c_str());
-    // readに失敗しても通信は継続させる。
-    // 不確かなデータをセットしないようにOKを返す。
+          rclcpp::get_logger("CranePlusHardware"),
+          driver_->get_last_error_log().c_str());
+      // readに失敗しても通信は継続させる。
+      // 不確かなデータをセットしないようにOKを返す。
     return return_type::OK;
   } else {
     for (uint i = 0; i < hw_position_states_.size(); ++i) {
@@ -214,8 +205,8 @@ return_type CranePlusHardware::read(
     }
   }
 
-  // Reading joint speeds, loads, voltages or temperatures
-  // causes a decrease of the communication rate.
+    // Reading joint speeds, loads, voltages or temperatures
+    // causes a decrease of the communication rate.
   if (read_velocities_) {
     std::vector<double> joint_speeds;
     if (driver_->read_present_joint_speeds(joint_speeds)) {
@@ -243,7 +234,6 @@ return_type CranePlusHardware::read(
     }
   }
 
-
   if (read_temperatures_) {
     std::vector<double> joint_temperatures;
     if (driver_->read_present_joint_temperatures(joint_temperatures)) {
@@ -263,7 +253,7 @@ return_type CranePlusHardware::write(
   if (communication_timeout()) {
     if (!timeout_has_printed_) {
       RCLCPP_ERROR(
-        rclcpp::get_logger("CranePlusHardware"), "Communication timeout!");
+            rclcpp::get_logger("CranePlusHardware"), "Communication timeout!");
       timeout_has_printed_ = true;
     }
     return return_type::ERROR;
@@ -271,10 +261,10 @@ return_type CranePlusHardware::write(
 
   if (!driver_->write_goal_joint_positions(hw_position_commands_)) {
     RCLCPP_ERROR(
-      rclcpp::get_logger("CranePlusHardware"),
-      driver_->get_last_error_log().c_str());
-    // writeに失敗しても通信は継続させる。
-    // 不確かなデータをセットしないようにOKを返す。
+          rclcpp::get_logger("CranePlusHardware"),
+          driver_->get_last_error_log().c_str());
+      // writeに失敗しても通信は継続させる。
+      // 不確かなデータをセットしないようにOKを返す。
     return return_type::OK;
   }
 
@@ -296,6 +286,5 @@ bool CranePlusHardware::communication_timeout()
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  crane_plus_control::CranePlusHardware,
-  hardware_interface::SystemInterface
-)
+    crane_plus_control::CranePlusHardware,
+    hardware_interface::SystemInterface)

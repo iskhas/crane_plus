@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.20)
 project(crane_plus_examples)
 
 # Default to C99
@@ -8,7 +8,7 @@ endif()
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 20)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -23,6 +23,7 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(image_geometry REQUIRED)
+find_package(OpenCV REQUIRED)
 
 # Build and install node executables
 set(executable_list
@@ -36,14 +37,14 @@ set(executable_list
 )
 foreach(loop_var IN LISTS executable_list)
   add_executable(${loop_var} src/${loop_var}.cpp)
-  ament_target_dependencies(${loop_var}
-    cv_bridge
-    geometry_msgs
-    moveit_ros_planning_interface
-    OpenCV
-    rclcpp
-    tf2_geometry_msgs
-    image_geometry
+  target_link_libraries(${loop_var}
+    cv_bridge::cv_bridge
+    geometry_msgs::geometry_msgs__rosidl_typesupport_cpp
+    moveit_ros_planning_interface::moveit_ros_planning_interface
+    ${OpenCV_LIBS}
+    rclcpp::rclcpp
+    tf2_geometry_msgs::tf2_geometry_msgs
+    image_geometry::image_geometry
   )
 
   install(TARGETS

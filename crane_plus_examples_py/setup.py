@@ -24,7 +24,6 @@ setup(
     maintainer_email='shop@rt-net.jp',
     description='python examples of CRANE+ V2 ROS package',
     license='Apache License 2.0',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'aruco_detection = crane_plus_examples_py.aruco_detection:main',

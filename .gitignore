@@ -57,3 +57,6 @@ docs/_build/
 target/
 .pytest_cache
 .vscode
+build/
+install/
+log/

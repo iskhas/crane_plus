@@ -30,7 +30,7 @@
 #include "cv_bridge/cv_bridge.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
 #include "tf2/LinearMath/Matrix3x3.hpp"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.hpp"
 using std::placeholders::_1;
 
 class ImageSubscriber : public rclcpp::Node
@@ -69,7 +69,7 @@ private:
       // 画像座標系上のマーカ頂点位置
       std::vector<std::vector<cv::Point2f>> corners;
       // マーカの検出
-      cv::aruco::detectMarkers(cv_img->image, MARKER_DICT, corners, ids);
+      cv::aruco::detectMarkers(cv_img->image, cv::makePtr<cv::aruco::Dictionary>(MARKER_DICT), corners, ids);
       // マーカの検出数
       int n_markers = ids.size();
       // カメラパラメータ

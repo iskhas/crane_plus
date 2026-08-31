@@ -58,6 +58,12 @@ def generate_launch_description():
         ),
         description='Set world name.',
     )
+    
+    crane_plus_controllers = os.path.join(
+            get_package_share_directory('crane_plus_control'),
+            'config',
+            'crane_plus_controllers.yaml',
+    )
 
     # PATHを追加で通さないとSTLファイルが読み込まれない
     env = {
@@ -125,21 +131,21 @@ def generate_launch_description():
         package='controller_manager',
         executable='spawner',
         output='screen',
-        arguments=['joint_state_broadcaster'],
+        arguments=['joint_state_broadcaster', '--param-file', crane_plus_controllers],
     )
 
     spawn_arm_controller = Node(
         package='controller_manager',
         executable='spawner',
         output='screen',
-        arguments=['crane_plus_arm_controller'],
+        arguments=['crane_plus_arm_controller', '--param-file', crane_plus_controllers],
     )
 
     spawn_gripper_controller = Node(
         package='controller_manager',
         executable='spawner',
         output='screen',
-        arguments=['crane_plus_gripper_controller'],
+        arguments=['crane_plus_gripper_controller', '--param-file', crane_plus_controllers],
     )
 
     bridge = Node(

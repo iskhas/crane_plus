@@ -69,7 +69,8 @@ private:
       // 画像座標系上のマーカ頂点位置
       std::vector<std::vector<cv::Point2f>> corners;
       // マーカの検出
-      cv::aruco::detectMarkers(cv_img->image, cv::makePtr<cv::aruco::Dictionary>(MARKER_DICT), corners, ids);
+      cv::aruco::detectMarkers(cv_img->image, cv::makePtr<cv::aruco::Dictionary>(MARKER_DICT),
+        corners, ids);
       // マーカの検出数
       int n_markers = ids.size();
       // カメラパラメータ
